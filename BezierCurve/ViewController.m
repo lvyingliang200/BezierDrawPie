@@ -16,6 +16,8 @@
 
 @property (nonatomic ,strong) NSTimer * timer;
 
+@property (weak, nonatomic) IBOutlet UIButton *animationBtn;
+
 @end
 
 @implementation ViewController
@@ -25,16 +27,24 @@
 
     self.shapeLayer    = [CAShapeLayer layer];
     self.progressLayer = [CAShapeLayer layer];
+}
+
+- (IBAction)startAnimation:(UIButton *)sender
+{
+    sender.userInteractionEnabled = NO;
+    [_shapeLayer removeFromSuperlayer];
+    [_progressLayer removeFromSuperlayer];
     CGRect drawBounds = CGRectMake(0, 0, 100, 100);
     [self updateLayer:self.shapeLayer Bounds:drawBounds StrockColor:[UIColor redColor] Start:0.75 End:0.75];
     [self updateLayer:self.progressLayer Bounds:drawBounds StrockColor:[UIColor greenColor] Start:0 End:0];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        _timer = [NSTimer scheduledTimerWithTimeInterval:0.01 target:self selector:@selector(circleAnimationOne) userInfo:nil repeats:YES];
+    });
     
-    
-    _timer = [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(circleAnimationTwo) userInfo:nil repeats:YES];
 }
 
 /**
- 设置layer的香菇你属性
+ 设置layer的相关属性
  
  @param layer       ：要进行操作的CAShapeLayer
  @param bounds      ：layer的大小
@@ -60,13 +70,15 @@
 - (void)circleAnimationOne
 {
     CGFloat speed = 0.05;
-    if (_progressLayer.strokeEnd <=0.75) {
+    if (_progressLayer.strokeEnd <=0.80) {
         _shapeLayer.strokeEnd += speed;
         _progressLayer.strokeEnd += speed;
     }else if (_shapeLayer.strokeEnd <=1){
         _shapeLayer.strokeEnd += speed;
     }else{
         [_timer invalidate];
+        _animationBtn.userInteractionEnabled = YES;
+        
     }
 }
 /**
@@ -74,15 +86,16 @@
  */
 - (void)circleAnimationTwo
 {
-    CGFloat redSpeed   = 0.1;
+    CGFloat redSpeed   = 0.05;
     CGFloat greenSpeed = redSpeed/2;
-    if (_progressLayer.strokeEnd <=0.75) {
+    if (_progressLayer.strokeEnd <=0.80) {
         _shapeLayer.strokeEnd += redSpeed;
         _progressLayer.strokeEnd += greenSpeed;
     }else if (_shapeLayer.strokeEnd <=1){
         _shapeLayer.strokeEnd += redSpeed;
     }else{
         [_timer invalidate];
+        _animationBtn.userInteractionEnabled = YES;
     }
 }
 /**
