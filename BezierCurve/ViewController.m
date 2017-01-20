@@ -8,11 +8,16 @@
 
 #import "ViewController.h"
 
+#define CENTER self.view.center
 
 @interface ViewController ()
 
 @property (nonatomic ,strong) CAShapeLayer * shapeLayer;
 @property (nonatomic ,strong) CAShapeLayer * progressLayer;
+@property (nonatomic ,strong) CAShapeLayer * subShapeLayer;
+@property (nonatomic ,strong) CAShapeLayer * subProgressLayer;
+
+@property (nonatomic ,assign) CGRect drawBounds;
 
 @property (nonatomic ,strong) NSTimer * timer;
 
@@ -27,6 +32,11 @@
 
     self.shapeLayer    = [CAShapeLayer layer];
     self.progressLayer = [CAShapeLayer layer];
+    _drawBounds = CGRectMake(0, 0, 100, 100);
+
+    [self drawSubTitleLayerWithPosition:CGPointMake(100, 500) FillColor:[UIColor greenColor] RectRadius:10];
+    [self drawSubTitleLayerWithPosition:CGPointMake(200, 500) FillColor:[UIColor redColor] RectRadius:10];
+    
 }
 
 - (IBAction)startAnimation:(UIButton *)sender
@@ -34,13 +44,30 @@
     sender.userInteractionEnabled = NO;
     [_shapeLayer removeFromSuperlayer];
     [_progressLayer removeFromSuperlayer];
-    CGRect drawBounds = CGRectMake(0, 0, 100, 100);
-    [self updateLayer:self.shapeLayer Bounds:drawBounds StrockColor:[UIColor redColor] Start:0.75 End:0.75];
-    [self updateLayer:self.progressLayer Bounds:drawBounds StrockColor:[UIColor greenColor] Start:0 End:0];
+    UIBezierPath *circlePath = [UIBezierPath bezierPathWithOvalInRect:_drawBounds];
+    [self updateLayer:self.shapeLayer Bounds:_drawBounds StrockColor:[UIColor redColor] Start:0.75 End:0.75 BezierPath:circlePath Position:CENTER];
+    [self updateLayer:self.progressLayer Bounds:_drawBounds StrockColor:[UIColor greenColor] Start:0 End:0 BezierPath:circlePath Position:CENTER];
+    
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         _timer = [NSTimer scheduledTimerWithTimeInterval:0.01 target:self selector:@selector(circleAnimationOne) userInfo:nil repeats:YES];
     });
-    
+}
+
+- (void)drawSubTitleLayerWithPosition:(CGPoint)position FillColor:(UIColor *)fillcolor RectRadius:(CGFloat)radius
+{
+    UIBezierPath *aPath = [UIBezierPath bezierPath];
+    //开始点 从上左下右的点
+    [aPath moveToPoint:CGPointMake(position.x,position.y)];
+    [aPath addLineToPoint:CGPointMake(position.x + radius, position.y)];
+    [aPath addLineToPoint:CGPointMake(position.x + radius, position.y + radius)];
+    [aPath addLineToPoint:CGPointMake(position.x , position.y + radius)];
+    [aPath closePath];
+
+    CAShapeLayer *shapelayer = [CAShapeLayer layer];
+    shapelayer.strokeColor = nil;
+    shapelayer.fillColor = fillcolor.CGColor;
+    shapelayer.path = aPath.CGPath;
+    [self.view.layer addSublayer:shapelayer];
 }
 
 /**
@@ -50,18 +77,17 @@
  @param bounds      ：layer的大小
  @param strockColor ：划线的颜色
  */
-- (void)updateLayer:(CAShapeLayer *)layer Bounds:(CGRect)bounds StrockColor:(UIColor *)strockColor Start:(CGFloat)start End:(CGFloat)end
+- (void)updateLayer:(CAShapeLayer *)layer Bounds:(CGRect)bounds StrockColor:(UIColor *)strockColor Start:(CGFloat)start End:(CGFloat)end BezierPath:(UIBezierPath*)bezierPath Position:(CGPoint)position
 {
     
     layer.frame       = bounds;
-    layer.position    = self.view.center;
+    layer.position    = position;
     layer.fillColor   = [UIColor clearColor].CGColor;
     layer.lineWidth   = bounds.size.width;
     layer.strokeColor = strockColor.CGColor;
     layer.strokeStart = 0;
     layer.strokeEnd   = 0;
-    UIBezierPath *circlePath = [UIBezierPath bezierPathWithOvalInRect:bounds];
-    layer.path        = circlePath.CGPath;
+    layer.path        = bezierPath.CGPath;
     [self.view.layer addSublayer:layer];
 }
 /**
@@ -98,6 +124,7 @@
         _animationBtn.userInteractionEnabled = YES;
     }
 }
+
 /**
     释放Timer
  */
